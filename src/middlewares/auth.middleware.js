@@ -23,13 +23,11 @@ export async function authMiddleware(req, res, next) {
   }
   try {
     const user = await connection.query(
-      `SELECT * FROM users WHERE users.id = '${id}'`
+      `SELECT id FROM users WHERE users.id = '${id}'`
     );
     if (!user.rows[0]) {
       return res.sendStatus(401);
     }
-    delete user.rows[0].password;
-    delete user.rows[0].confirmPassword;
     req.user = user.rows[0];
     next();
   } catch (err) {

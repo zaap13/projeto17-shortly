@@ -20,3 +20,19 @@ export async function postUrl(req, res) {
     res.status(500).send(err.detail);
   }
 }
+
+export async function getUrl(req, res) {
+  const { id } = req.params;
+  try {
+    const url = await connection.query(
+      `SELECT * FROM urls WHERE urls.id = '${id}'`
+    );
+    if (!url.rows[0]) {
+      return res.status(404).send("URL não encontrada");
+    }
+    res.status(200).send(url.rows[0]);
+  } catch (err) {
+    console.log(err);
+    res.status(500).send(err.detail);
+  }
+}
