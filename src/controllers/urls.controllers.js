@@ -36,3 +36,41 @@ export async function getUrl(req, res) {
     res.status(500).send(err.detail);
   }
 }
+
+export async function openUrl(req, res) {
+  const { shortUrl } = req.params;
+  try {
+    const url = await connection.query(
+      `SELECT url FROM urls WHERE urls."shortUrl" = '${shortUrl}'`
+    );
+    if (!url.rows[0]) {
+      return res.status(404).send("URL não encontrada");
+    }
+    res.redirect(301, url.rows[0].url);
+  } catch (err) {
+    console.log(err);
+    res.status(500).send(err.detail);
+  }
+}
+
+export async function deleteUrl(req, res) {
+  const { id } = req.params;
+  const user = req.user;
+
+  try {
+    const userId = await connection.query(
+      `SELECT "userId" from urls WHERE urls.id = '${id}'`
+    );
+    if (!userId.rows[0]) {
+      return res.sendStatus(404);
+    }
+    if (userId.rows[0].userId !== user.id) {
+      return res.sendStatus(401);
+    }
+    await connection.query(`DELETE FROM urls WHERE urls.id = '${id}'`);
+    res.sendStatus(204);
+  } catch (err) {
+    console.log(err);
+    res.status(500).send(err.detail);
+  }
+}
