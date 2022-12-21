@@ -84,3 +84,15 @@ export async function getUser(req, res) {
     res.status(500).send(err.detail);
   }
 }
+
+export async function getRanking(req, res) {
+  try {
+    const ranking = await connection.query(
+      `SELECT users.id, users.name,  SUM(urls."visitCount") as "visitCount", COUNT(urls.id) as "linksCount" FROM users JOIN urls ON urls."userId" = users.id GROUP BY users.id ORDER BY "visitCount" DESC LIMIT 10;`
+    );
+    res.send(ranking.rows);
+  } catch (err) {
+    console.log(err);
+    res.status(500).send(err.detail);
+  }
+}
