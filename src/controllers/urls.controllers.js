@@ -46,6 +46,9 @@ export async function openUrl(req, res) {
     if (!url.rows[0]) {
       return res.status(404).send("URL não encontrada");
     }
+    await connection.query(
+      `UPDATE urls SET "visitCount" = "visitCount"+1 WHERE urls."shortUrl" = '${shortUrl}'`
+    );
     res.redirect(301, url.rows[0].url);
   } catch (err) {
     console.log(err);

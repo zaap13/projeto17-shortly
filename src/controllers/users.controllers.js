@@ -54,3 +54,33 @@ export async function logIn(req, res) {
     res.sendStatus(500);
   }
 }
+
+export async function getUser(req, res) {
+  const { id } = req.user;
+
+  try {
+    const user = await connection.query(
+      `SELECT users.name, users.id, SUM(urls."visitCount") as "visitCount" FROM users JOIN urls ON urls."userId" = '${id}' WHERE users.id = '${id}' GROUP BY users.id`
+    );
+
+    if (!user.rows[0]) {
+      return res.status(404).send("Usuário não encontrado");
+    }
+
+    const shortenedUrls = await connection.query(
+      `SELECT id, "shortUrl", url, "visitCount" FROM urls WHERE urls."userId" = '${id}' ORDER BY id`
+    );
+
+    const response = {
+      id: user.rows[0].id,
+      name: user.rows[0].name,
+      visitCount: user.rows[0].visitCount,
+      shortenedUrls: shortenedUrls.rows,
+    };
+
+    res.status(200).send(response);
+  } catch (err) {
+    console.log(err);
+    res.status(500).send(err.detail);
+  }
+}
