@@ -1,6 +1,12 @@
-import { connection } from "../database/db.js";
 import bcrypt from "bcrypt";
 import { generateToken } from "../services/auth.service.js";
+import {
+  insertUser,
+  selectRanking,
+  selectShortUrl,
+  selectUser,
+  selectUserMe,
+} from "../repositories/users.repositories.js";
 
 export async function postUser(req, res) {
   const { name, email, password, confirmPassword } = req.body;
@@ -12,13 +18,7 @@ export async function postUser(req, res) {
   const hashPassword = bcrypt.hashSync(password, 10);
 
   try {
-    await connection.query(
-      `INSERT INTO users 
-       (name, email, password, "confirmPassword") 
-      VALUES 
-       ($1, $2, $3, $4)`,
-      [name, email, hashPassword, hashPassword]
-    );
+    await insertUser(name, email, hashPassword);
 
     res.sendStatus(201);
   } catch (err) {
@@ -31,9 +31,7 @@ export async function logIn(req, res) {
   const { email, password } = req.body;
 
   try {
-    const user = await connection.query(
-      `SELECT * FROM users WHERE users.email = '${email}'`
-    );
+    const user = await selectUser(email);
     if (!user.rows[0]) {
       return res.status(404).send("Usuário não cadastrado");
     }
@@ -59,17 +57,13 @@ export async function getUser(req, res) {
   const { id } = req.user;
 
   try {
-    const user = await connection.query(
-      `SELECT users.name, users.id, SUM(urls."visitCount") as "visitCount" FROM users JOIN urls ON urls."userId" = '${id}' WHERE users.id = '${id}' GROUP BY users.id`
-    );
+    const user = await selectUserMe(id);
 
     if (!user.rows[0]) {
       return res.status(404).send("Usuário não encontrado");
     }
 
-    const shortenedUrls = await connection.query(
-      `SELECT id, "shortUrl", url, "visitCount" FROM urls WHERE urls."userId" = '${id}' ORDER BY id`
-    );
+    const shortenedUrls = await selectShortUrl(id);
 
     const response = {
       id: user.rows[0].id,
@@ -87,9 +81,7 @@ export async function getUser(req, res) {
 
 export async function getRanking(req, res) {
   try {
-    const ranking = await connection.query(
-      `SELECT users.id, users.name,  SUM(urls."visitCount") as "visitCount", COUNT(urls.id) as "linksCount" FROM users JOIN urls ON urls."userId" = users.id GROUP BY users.id ORDER BY "visitCount" DESC LIMIT 10;`
-    );
+    const ranking = await selectRanking();
     res.send(ranking.rows);
   } catch (err) {
     console.log(err);
