@@ -34,8 +34,8 @@ export function selectShortUrl(id) {
 
 export function selectRanking() {
   return connection.query(
-    `SELECT users.id, users.name, SUM(urls."visitCount") as "visitCount", COUNT(urls.id) as "linksCount" 
-        FROM users JOIN urls 
+    `SELECT users.id, users.name, coalesce(SUM(urls."visitCount"), 0) as "visitCount", COUNT(urls.id) as "linksCount" 
+        FROM users LEFT JOIN urls 
         ON urls."userId" = users.id 
         GROUP BY users.id 
         ORDER BY "visitCount" 
